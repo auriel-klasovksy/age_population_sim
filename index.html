@@ -23,19 +23,26 @@
     <div id="container">
         
         <div id="plotdiv"></div>
-        <p>Sum: <span id="sum"></span></p>
+        <!-- <p>Sum: <span id="sum"></span></p> -->
         <button onclick="step(starting_conditions)">Next 10 years</button>
+        <br>
+        <button onclick="sim(starting_conditions)">simulate</button>
+        <br>
+        <button onclick="random_array(starting_conditions);init()">Randomize (sum 100)</button>
         
         <div>
             <p>Fertile cohort</p>
             <input id="fertileCohort" type="number" value="3">
         </div>
         <div>
+            <p>Fertility percent in neighboring cohorts</p>
+            <input id="neighborFertilityPercent" type="number" value="10">
+        </div>
+        <div>
             <p>Babies per Family</p>
             <input id="babiesPerFamily" type="number" value="3">
         </div>
         <br>
-        <button onclick="random_array(starting_conditions);init()">Randomize (sum 100)</button>
 
     </div>
 
@@ -49,15 +56,35 @@
         
         init()
 
+        function sim(array) {
+            var counter = 0
+            var last = array.slice()
+            var intervalId = window.setInterval(function(){
+                step(array)
+                let diff = 0
+                for(let i = 0; i < array.length; i++) {
+                    diff += Math.abs(array[i] - last[i])
+                }
+                if(diff < 1 || counter++ > 100) {
+                    clearInterval(intervalId) 
+                }
+                last = array.slice()
+            }, 10);
+        }
+
         function step(array) {
-            furtile_index = document.getElementById("fertileCohort").value
+            furtile_index = Number(document.getElementById("fertileCohort").value)
+            let neighborFertilityPercent = Number(document.getElementById("neighborFertilityPercent").value)
             baby_ratio = document.getElementById("babiesPerFamily").value / 2
             // natural_death(array,natural_death_perc)
             let babies = get_babies(array, furtile_index, baby_ratio)
+            babies += get_babies(array,furtile_index+1,baby_ratio/10)
+            babies += get_babies(array,furtile_index-1,baby_ratio/10)
             age_people(array)
             array[0] = babies
+            normalize(array)
             plot_people(array)
-            show_sum(array)
+            //show_sum(array)
         }
 
         function natural_death(array,death_perc) {
@@ -75,6 +102,7 @@
             }
         }
         function get_babies(array, furtile_index, baby_ratio) {
+            console.log(array[furtile_index],furtile_index)
             return array[furtile_index] * baby_ratio
         }
 
@@ -100,12 +128,21 @@
         function sum_array(array) {
             return array.reduce((partialSum, a) => partialSum + a, 0)
         }
+
+        function normalize(array) {
+            let sum = sum_array(array)
+            let ratio = 100 / sum
+            for(let i = 0; i < array.length; i++) {
+                array[i] *= ratio;
+            }
+        }
+
         function show_sum(array) {
             total_view.innerText = sum_array(array)
         }
         function init() {
             plot_people(starting_conditions)
-            show_sum(starting_conditions)
+            //show_sum(starting_conditions)
         }
 
         function plot_people(people) {
